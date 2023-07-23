@@ -1,6 +1,5 @@
 function habilitarMascaras() {
     $('.phone-ddd-mask').on('input', function() {
-        console.log("aqui")
         $(".phone-ddd-mask").mask("(99) 99999-9999");
     });
 

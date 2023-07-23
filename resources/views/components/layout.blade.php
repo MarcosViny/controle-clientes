@@ -15,12 +15,27 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>{{ $title }}</h1>
-        <hr>
+    <x-app-layout>
+        <div class="bg-white dark:bg-gray-800 py-12">
+            <div class="container">
+                <h1>{{ $title }}</h1>
+                <hr>
 
-        {{ $slot }}
-    </div>
+                @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="errors">
+                        @foreach ($errors->all() as $error)
+                        <li class="error">{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
+                {{ $slot }}
+            </div>
+        </div>
+    </x-app-layout>
+
 
     <script>
         // Necessário para realizar requisições AJAX

@@ -5,24 +5,33 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Cliente;
 use App\Models\Endereco;
+use App\Http\Requests\ClienteFormRequest;
+use App\Repositories\ClienteRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ClienteController extends Controller
 {
 
+    protected $model;
+
+    public function __construct(Cliente $cliente)
+    {
+        $this->model = $cliente;
+    }
+
     public function index()
     {
-        $clientes = Cliente::all();
+        $clientes = $this->model->all();
 
-        return view('cliente.index', ['clientes' => $clientes]);
+        return view('cliente.index', compact('clientes'));
     }
 
     public function show($id)
     {
-        $cliente = Cliente::findOrFail($id);
+        $cliente = $this->model->findOrFail($id);
 
-        return view('cliente.show', ['cliente' => $cliente]);
+        return view('cliente.show', compact('cliente'));
     }
 
     public function create()
@@ -30,100 +39,38 @@ class ClienteController extends Controller
         return view('cliente.create');
     }
 
-    public function store(Request $request)
+    public function store(ClienteFormRequest $request, ClienteRepository $repository)
     {
-        try {
-            DB::beginTransaction();
-            $cliente = Cliente::create([
-                'nome' => $request->nome,
-                'email' => $request->email,
-                'genero' => $request->genero,
-            'telefone' => limpa_telefone($request->telefone)
-            ]);
+        $resultado = $repository->store($request);
 
-            if (!$cliente) {
-                throw new Exception("Falha ao cadastrar o cliente.");
-            }
-
-            $endereco = Endereco::create([
-                'cep' => limpa_cpf_cnpj($request->cep),
-                'logradouro' => $request->logradouro,
-                'complemento' => $request->complemento,
-                'bairro' => $request->bairro,
-                'localidade' => $request->localidade,
-                'uf' => $request->uf,
-                'cliente_id' => $cliente->id
-            ]);
-
-            if (!$endereco) {
-                throw new Exception("Falha ao cadastrar o endereço do cliente.");
-            }
-
-            DB::commit();
-
-            return "Cliente criado com sucesso!";
-        } catch (Exception $e) {
-            DB::rollback();
-
-            return "Ocorreu um erro ao cadastrar o cliente. Erro: " . $e->getMessage();
-        }
+        return $resultado['msg'];
     }
 
     public function edit($id)
     {
-        $cliente = Cliente::findOrFail($id);
-
+        $cliente = $this->model->findOrFail($id);
         if (!$cliente) {
-            // 'Cliente não encontrado'
-        } else {
-            $cliente->telefone_formatado = formatarTelefone($cliente->telefone);
+            return 'Cliente não encontrado';
         }
 
         $endereco = Endereco::where('cliente_id', $id)->first();
-
         if (!$endereco) {
-            // 'Endereço não encontrado'
-        } else {
-            $endereco->cep_formatado = formatarCep($endereco->cep);
+            return 'Endereço não encontrado';
         }
 
         return view('cliente.edit', compact('cliente', 'endereco'));
     }
 
-    public function update(Request $request, $idCliente)
+    public function update(ClienteFormRequest $request, ClienteRepository $repository, int $idCliente)
     {
-        $cliente = Cliente::findOrFail($idCliente);
+        $resultado = $repository->update($request, $idCliente);
 
-        $clienteAtualizado = $cliente->update([
-            'nome' => $request->nome,
-            'email' => $request->email,
-            'genero' => $request->genero,
-            'telefone' => limpa_telefone($request->telefone)
-
-        ]);
-
-        if ($clienteAtualizado) {
-            $endereco = Endereco::where('cliente_id', $idCliente)->first();
-
-            $enderecoAtualizado = $endereco->update([
-                'cep' => limpa_cpf_cnpj($request->cep),
-                'logradouro' => $request->logradouro,
-                'complemento' => $request->complemento,
-                'bairro' => $request->bairro,
-                'localidade' => $request->localidade,
-                'uf' => $request->uf,
-                'cliente_id' => $cliente->id
-            ]);
-
-            if ($enderecoAtualizado) {
-                return "Cliente atualizado com Sucesso!";
-            }
-        }
+        return $resultado;
     }
 
     public function destroy($id)
     {
-        $cliente = Cliente::findOrFail($id);
+        $cliente = $this->model->findOrFail($id);
 
         if ($cliente->delete()) {
             return "Cliente removido com sucesso!";

@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cliente/excluir/{id}', [ClienteController::class, 'destroy'])->name('cliente.delete');
 
     Route::post('/consulta-cep', [CepController::class, 'consultarCep'])->name('consulta-cep');
+
 });
 
 require __DIR__.'/auth.php';
